@@ -1,0 +1,175 @@
+@import 'tailwindcss';
+@import 'tw-animate-css';
+@import 'shadcn/tailwind.css';
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --font-sans: 'Public Sans Variable', ui-sans-serif, system-ui, sans-serif;
+  --font-display: 'Newsreader Variable', ui-serif, Georgia, serif;
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--foreground);
+  --color-popover: var(--card);
+  --color-popover-foreground: var(--foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--muted);
+  --color-secondary-foreground: var(--foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--muted);
+  --color-accent-foreground: var(--foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--border-strong);
+  --color-ring: var(--primary);
+
+  --color-seal: var(--seal);
+  --color-manila: #ecd690;
+  --color-manila-edge: #c9a84e;
+  --color-manila-ink: #1b2140;
+  --color-stamp: #2f3cc0;
+
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 10px;
+  --radius-xl: 14px;
+}
+
+/* Papel frío y tinta azul: el color de un expediente, no el gris por defecto. */
+:root {
+  color-scheme: light;
+  --background: #eef0f4;
+  --foreground: #141a33;
+  --card: #fafbfc;
+  --muted: #e3e6ed;
+  --muted-foreground: #565d78;
+  --border: #d5d9e3;
+  --border-strong: #b9bfd0;
+  --primary: #2f3cc0;
+  --primary-foreground: #ffffff;
+  --seal: #1a7355;
+  --destructive: #b3362e;
+  --rule: rgba(47, 60, 192, 0.07);
+}
+
+.dark {
+  color-scheme: dark;
+  --background: #0e1226;
+  --foreground: #e9ebf5;
+  --card: #161b36;
+  --muted: #1f2545;
+  --muted-foreground: #9aa1c0;
+  --border: #2a3157;
+  --border-strong: #3d4675;
+  --primary: #8e99ff;
+  --primary-foreground: #0e1226;
+  --seal: #5ccba2;
+  --destructive: #f0837a;
+  --rule: rgba(142, 153, 255, 0.06);
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  html {
+    font-family: var(--font-sans);
+  }
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-feature-settings: 'ss01';
+  }
+  ::selection {
+    background: color-mix(in srgb, var(--primary) 28%, transparent);
+  }
+  :focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+  }
+}
+
+/* Renglones de hoja de registro, solo detrás del encabezado. */
+.ruled {
+  background-image: repeating-linear-gradient(to bottom, transparent 0 35px, var(--rule) 35px 36px);
+  mask-image: linear-gradient(to bottom, #000 0%, #000 55%, transparent 100%);
+}
+
+.case-number {
+  font-variant-numeric: tabular-nums lining-nums;
+  letter-spacing: 0.02em;
+  font-weight: 600;
+}
+
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Brillo que recorre el texto del paso en curso. */
+.shimmer {
+  background: linear-gradient(
+    100deg,
+    var(--foreground) 0%,
+    var(--foreground) 38%,
+    var(--primary) 50%,
+    var(--foreground) 62%,
+    var(--foreground) 100%
+  );
+  background-size: 250% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: shimmer 2.4s linear infinite;
+}
+
+@keyframes shimmer {
+  from {
+    background-position: 125% 0;
+  }
+  to {
+    background-position: -125% 0;
+  }
+}
+
+/* Luz que recorre el borde del campo mientras hay una búsqueda en curso. */
+@property --beam {
+  syntax: '<angle>';
+  initial-value: 0deg;
+  inherits: false;
+}
+
+.beam::before {
+  content: '';
+  position: absolute;
+  inset: -1.5px;
+  border-radius: inherit;
+  padding: 1.5px;
+  background: conic-gradient(from var(--beam), transparent 0 72%, var(--primary) 86%, transparent 100%);
+  mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  mask-composite: exclude;
+  animation: beam 3.2s linear infinite;
+  pointer-events: none;
+}
+
+@keyframes beam {
+  to {
+    --beam: 360deg;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .shimmer {
+    animation: none;
+    background: none;
+    color: inherit;
+  }
+  .beam::before {
+    animation: none;
+    background: var(--primary);
+  }
+}
