@@ -1,7 +1,7 @@
 'use client'
 
 import { AnimatePresence, motion, useDragControls } from 'framer-motion'
-import { GripHorizontal, Minus, ShieldCheck } from 'lucide-react'
+import { GripHorizontal, Minus, RotateCw, ShieldCheck } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import type { Job } from '@/lib/types'
 
@@ -47,6 +47,9 @@ export function CaptchaWindow({
   const countdown = useCountdown(active ? (job?.captcha_expires_at ?? null) : null)
   const scale = useScale()
   const controls = useDragControls()
+  // Cambiar la clave vuelve a cargar la transmisión. El navegador remoto no se
+  // reinicia: la búsqueda y la casilla siguen donde estaban.
+  const [viewKey, setViewKey] = useState(0)
   const bounds = useRef<HTMLDivElement>(null)
 
   return (
@@ -83,6 +86,16 @@ export function CaptchaWindow({
               <button
                 type="button"
                 onPointerDown={(event) => event.stopPropagation()}
+                onClick={() => setViewKey((k) => k + 1)}
+                aria-label="Reload the view"
+                title="Reload the view"
+                className="grid size-7 place-items-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground"
+              >
+                <RotateCw className="size-3.5" />
+              </button>
+              <button
+                type="button"
+                onPointerDown={(event) => event.stopPropagation()}
                 onClick={() => onOpenChange(false)}
                 aria-label="Minimize the verification window"
                 className="grid size-7 place-items-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground"
@@ -93,6 +106,7 @@ export function CaptchaWindow({
 
             <div style={{ height: VIEW_H * scale }} className="relative overflow-hidden bg-white">
               <iframe
+                key={viewKey}
                 title="Portal verification box"
                 src={job?.live_view_url ?? undefined}
                 sandbox="allow-same-origin allow-scripts"
@@ -108,7 +122,7 @@ export function CaptchaWindow({
             </div>
 
             <p className="flex h-12 items-center border-t px-3.5 text-sm text-muted-foreground">
-              Tick the box. The search continues by itself once the portal accepts it.
+              Tick the box. If the view freezes, reload it with ↻ above.
             </p>
           </motion.div>
         )}

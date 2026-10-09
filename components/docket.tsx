@@ -5,7 +5,7 @@ import { Check, Clock, ExternalLink, ShieldCheck, X } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { clock, host, personName, plainDate } from '@/lib/format'
 import { STAGES, failedStage, stageIndex, useStageTimes } from '@/lib/stages'
-import { isFinal, type Job } from '@/lib/types'
+import { isFinal, type Job, type JobStatus } from '@/lib/types'
 import { cn } from '@/lib/utils'
 
 const LABELS = [
@@ -91,12 +91,39 @@ function useStuckInQueue(job: Job): boolean {
   return pending && now - new Date(job.created_at).getTime() > QUEUE_PATIENCE_MS
 }
 
+// Cuánto puede tardar cada paso antes de avisar que va lento, y por qué suele ser.
+// La verificación no está: ahí la espera depende de la persona.
+const SLOW_STEP: Partial<Record<JobStatus, { afterMs: number; text: string }>> = {
+  fetching: { afterMs: 60_000, text: 'The news site is slow to respond.' },
+  extracting: { afterMs: 45_000, text: 'The AI models are taking longer than usual.' },
+  searching: { afterMs: 150_000, text: 'The court portal is responding slowly.' },
+  downloading: { afterMs: 90_000, text: 'The court portal is responding slowly.' },
+}
+
+/** Texto a mostrar si el paso actual lleva más de lo normal (cuenta desde que empezó ese paso). */
+function useSlowStep(job: Job): string | null {
+  const rule = SLOW_STEP[job.status]
+  const [since, setSince] = useState(() => Date.now())
+  const [now, setNow] = useState(() => Date.now())
+  useEffect(() => {
+    setSince(Date.now())
+    setNow(Date.now())
+  }, [job.id, job.status])
+  useEffect(() => {
+    if (!rule) return
+    const timer = window.setInterval(() => setNow(Date.now()), 5000)
+    return () => window.clearInterval(timer)
+  }, [rule])
+  return rule && now - since > rule.afterMs ? rule.text : null
+}
+
 export function Docket({ job, onOpenCaptcha }: { job: Job; onOpenCaptcha: () => void }) {
   const times = useStageTimes(job)
   const current = stageIndex(job.status)
   const done = isFinal(job.status)
   const failedAt = done ? failedStage(job, times) : -1
   const stuck = useStuckInQueue(job)
+  const slow = useSlowStep(job)
 
   function stateOf(i: number): RowState {
     if (done) {
@@ -188,6 +215,19 @@ export function Docket({ job, onOpenCaptcha }: { job: Job; onOpenCaptcha: () => 
                   )}
                 </p>
 
+                <AnimatePresence initial={false}>
+                  {state === 'doing' && slow && (
+                    <motion.p
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: 'auto' }}
+                      exit={{ opacity: 0, height: 0 }}
+                      className="flex items-start gap-2 overflow-hidden pt-1.5 text-sm text-muted-foreground"
+                    >
+                      <Clock className="mt-0.5 size-3.5 shrink-0" aria-hidden="true" />
+                      <span>{slow} The search keeps going on its own, so there’s no need to refresh.</span>
+                    </motion.p>
+                  )}
+                </AnimatePresence>
                 {i === 1 && state !== 'todo' && <Facts job={job} />}
                 {i === 2 && state === 'done' && job.case_number && (
                   <p className="case-number mt-1 text-sm text-muted-foreground">{job.case_number}</p>
