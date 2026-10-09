@@ -10,6 +10,7 @@ import { CaseFile } from '@/components/case-file'
 import { Docket } from '@/components/docket'
 import { History } from '@/components/history'
 import { LinkForm } from '@/components/link-form'
+import { SiteFooter } from '@/components/site-footer'
 import { ThemeToggle } from '@/components/theme-toggle'
 import { signOut, useSession } from '@/lib/auth'
 import { createJob, useHistory, useJob } from '@/lib/jobs'
@@ -69,10 +70,10 @@ export default function Home() {
 
   return (
     <MotionConfig reducedMotion="user">
-      <div className="relative min-h-dvh">
+      <div className="relative flex min-h-dvh flex-col">
         <div aria-hidden="true" className="ruled pointer-events-none absolute inset-x-0 top-0 h-[26rem]" />
 
-        <header className="relative mx-auto flex h-16 max-w-3xl items-center justify-between px-5">
+        <header className="relative mx-auto flex h-16 w-full max-w-3xl items-center justify-between px-5">
           <Brand />
           <div className="flex items-center gap-1">
             <span className="mr-2 hidden items-center gap-2 text-sm text-muted-foreground sm:flex">
@@ -95,7 +96,7 @@ export default function Home() {
           </div>
         </header>
 
-        <main className="relative mx-auto max-w-3xl px-5 pb-28">
+        <main className="relative mx-auto w-full max-w-3xl flex-1 px-5 pb-20">
 
           <motion.div
             initial={{ opacity: 0, y: 14 }}
@@ -135,6 +136,8 @@ export default function Home() {
             <History jobs={jobs} loading={loading} activeId={activeId} onSelect={select} />
           </div>
         </main>
+
+        <SiteFooter />
 
         <CaptchaWindow job={job} open={captchaOpen} onOpenChange={setCaptchaOpen} />
       </div>
