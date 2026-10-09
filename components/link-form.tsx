@@ -5,16 +5,32 @@ import { useId, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 
-function validate(value: string): string | null {
-  if (!value) return 'Paste the link to the news story.'
+const MAX_LENGTH = 2000
+
+/** Devuelve el enlace listo para enviar, o el mensaje que hay que mostrar. */
+export function checkLink(raw: string): { url: string } | { error: string } {
+  let value = raw.trim()
+  if (!value) return { error: 'Paste the link to the news story.' }
+  if (value.length > MAX_LENGTH) return { error: 'That link is too long. Copy it again from the address bar.' }
+  if (/\s/.test(value)) return { error: 'That doesn’t look like a link. Paste the address of the news story, starting with https://' }
+  // "wesh.com/article/..." sin https:// también vale.
+  if (!/^[a-z][a-z0-9+.-]*:/i.test(value) && /^[\w-]+(\.[\w-]+)+(\/|$)/.test(value)) value = `https://${value}`
+  let url: URL
   try {
-    const url = new URL(value)
-    if (url.protocol !== 'http:' && url.protocol !== 'https:') throw new Error()
-    if (!url.hostname.includes('.')) throw new Error()
-    return null
+    url = new URL(value)
   } catch {
-    return 'That doesn’t look like a link. It should start with https://'
+    return { error: 'That doesn’t look like a link. Paste the address of the news story, starting with https://' }
   }
+  if (url.protocol !== 'http:' && url.protocol !== 'https:') {
+    return { error: 'Only web links (https://) can be searched.' }
+  }
+  if (!/^[^.]+(\.[^.]+)*\.[a-z]{2,}$/i.test(url.hostname)) {
+    return { error: 'That doesn’t look like a website address. Check the link.' }
+  }
+  if (url.pathname.replace(/\/+$/, '') === '' && !url.search) {
+    return { error: 'That’s the site’s home page. Open the news story and copy its link.' }
+  }
+  return { url: url.toString() }
 }
 
 export function LinkForm({
@@ -32,13 +48,16 @@ export function LinkForm({
 
   async function submit(event: React.FormEvent) {
     event.preventDefault()
-    const url = value.trim()
-    const problem = validate(url)
-    setError(problem)
-    if (problem || busy || sending) return
+    const checked = checkLink(value)
+    if ('error' in checked) {
+      setError(checked.error)
+      return
+    }
+    setError(null)
+    if (busy || sending) return
     setSending(true)
     try {
-      await onSubmit(url)
+      await onSubmit(checked.url)
       setValue('')
     } catch {
       setError('Couldn’t start the search. Check your connection and try again.')

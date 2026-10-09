@@ -12,6 +12,9 @@ export type JobStatus =
   | 'not_found'
   | 'ambiguous'
   | 'unsupported'
+  | 'unreadable'
+  | 'no_suspect'
+  | 'unknown_location'
   | 'captcha_timeout'
   | 'error'
   | 'cancelled'
@@ -61,6 +64,9 @@ export const FINAL_STATUSES: JobStatus[] = [
   'not_found',
   'ambiguous',
   'unsupported',
+  'unreadable',
+  'no_suspect',
+  'unknown_location',
   'captcha_timeout',
   'error',
   'cancelled',

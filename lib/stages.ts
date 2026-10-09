@@ -52,6 +52,11 @@ export function useStageTimes(job: Job | null): Partial<Record<Stage, number>> {
 /** En qué paso se detuvo una búsqueda que no terminó con documento. */
 export function failedStage(job: Job, times: Partial<Record<Stage, number>>): number {
   switch (job.status) {
+    case 'unreadable':
+      return 0
+    case 'no_suspect':
+      return 1
+    case 'unknown_location':
     case 'unsupported':
       // Los datos sí se extrajeron; lo que no se puede es buscar en ese condado.
       return job.extraction ? 2 : 1

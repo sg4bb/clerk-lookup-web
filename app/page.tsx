@@ -13,7 +13,6 @@ import { LinkForm } from '@/components/link-form'
 import { ThemeToggle } from '@/components/theme-toggle'
 import { signOut, useSession } from '@/lib/auth'
 import { createJob, useHistory, useJob } from '@/lib/jobs'
-import { isDemo } from '@/lib/supabase'
 import { isFinal } from '@/lib/types'
 
 const ACTIVE_KEY = 'cl-active-job'
@@ -25,7 +24,7 @@ export default function Home() {
   const [captchaOpen, setCaptchaOpen] = useState(true)
   const { job, missing } = useJob(session.state === 'in' ? activeId : null)
   const running = Boolean(job && !isFinal(job.status))
-  const { jobs, loading } = useHistory(`${session.state}:${activeId}:${job ? isFinal(job.status) : ''}`)
+  const { jobs, loading } = useHistory(`${activeId}:${job ? isFinal(job.status) : ''}`, session.state === 'in')
 
   useEffect(() => {
     if (session.state === 'out') router.replace('/login')
@@ -33,7 +32,6 @@ export default function Home() {
 
   // Al recargar la página se retoma la búsqueda que estaba abierta.
   useEffect(() => {
-    if (isDemo) return
     try {
       const saved = window.localStorage.getItem(ACTIVE_KEY)
       if (saved) setActiveId(saved)
@@ -77,7 +75,14 @@ export default function Home() {
         <header className="relative mx-auto flex h-16 max-w-3xl items-center justify-between px-5">
           <Brand />
           <div className="flex items-center gap-1">
-            <span className="mr-2 hidden max-w-56 truncate text-sm text-muted-foreground sm:block">{session.email}</span>
+            <span className="mr-2 hidden items-center gap-2 text-sm text-muted-foreground sm:flex">
+              <span className="max-w-56 truncate">{session.email}</span>
+              {session.role === 'admin' && (
+                <span className="rounded-full border border-primary/40 px-2 py-0.5 text-xs font-medium text-primary">
+                  Admin
+                </span>
+              )}
+            </span>
             <ThemeToggle />
             <button
               type="button"
@@ -91,12 +96,6 @@ export default function Home() {
         </header>
 
         <main className="relative mx-auto max-w-3xl px-5 pb-28">
-          {isDemo && (
-            <p className="mt-2 rounded-md border border-dashed border-input px-3.5 py-2.5 text-sm text-muted-foreground">
-              Demo mode: the data is simulated. To use real data, set up Supabase in{' '}
-              <code className="text-foreground">.env.local</code>.
-            </p>
-          )}
 
           <motion.div
             initial={{ opacity: 0, y: 14 }}

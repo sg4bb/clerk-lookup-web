@@ -1,7 +1,8 @@
 'use client'
 
 import { AnimatePresence, motion } from 'framer-motion'
-import { Check, ExternalLink, ShieldCheck, X } from 'lucide-react'
+import { Check, Clock, ExternalLink, ShieldCheck, X } from 'lucide-react'
+import { useEffect, useState } from 'react'
 import { clock, host, personName, plainDate } from '@/lib/format'
 import { STAGES, failedStage, stageIndex, useStageTimes } from '@/lib/stages'
 import { isFinal, type Job } from '@/lib/types'
@@ -76,11 +77,26 @@ function Facts({ job }: { job: Job }) {
   )
 }
 
+// Si nadie toma el pedido en este tiempo, el worker probablemente no está corriendo.
+const QUEUE_PATIENCE_MS = 45_000
+
+function useStuckInQueue(job: Job): boolean {
+  const [now, setNow] = useState(() => Date.now())
+  const pending = job.status === 'pending'
+  useEffect(() => {
+    if (!pending) return
+    const timer = window.setInterval(() => setNow(Date.now()), 5000)
+    return () => window.clearInterval(timer)
+  }, [pending])
+  return pending && now - new Date(job.created_at).getTime() > QUEUE_PATIENCE_MS
+}
+
 export function Docket({ job, onOpenCaptcha }: { job: Job; onOpenCaptcha: () => void }) {
   const times = useStageTimes(job)
   const current = stageIndex(job.status)
   const done = isFinal(job.status)
   const failedAt = done ? failedStage(job, times) : -1
+  const stuck = useStuckInQueue(job)
 
   function stateOf(i: number): RowState {
     if (done) {
@@ -113,6 +129,23 @@ export function Docket({ job, onOpenCaptcha }: { job: Job; onOpenCaptcha: () => 
           <span className="shrink-0 rounded-full bg-muted px-2.5 py-1 text-xs text-muted-foreground">Queued</span>
         )}
       </header>
+
+      <AnimatePresence initial={false}>
+        {stuck && (
+          <motion.p
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            className="flex items-start gap-2.5 overflow-hidden border-b bg-muted/50 px-5 py-3 text-sm text-muted-foreground"
+          >
+            <Clock className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
+            <span>
+              The search hasn’t started yet. It begins as soon as the search service is running, so you can leave this
+              page open.
+            </span>
+          </motion.p>
+        )}
+      </AnimatePresence>
 
       <ol className="px-5 py-2" aria-live="polite">
         {STAGES.map((stage, i) => {

@@ -8,7 +8,7 @@ import { BrandMark } from '@/components/brand'
 import { ThemeToggle } from '@/components/theme-toggle'
 import { Button } from '@/components/ui/button'
 import { signIn, useSession } from '@/lib/auth'
-import { isDemo } from '@/lib/supabase'
+import { isConfigured } from '@/lib/supabase'
 
 const field =
   'h-11 w-full rounded-lg border border-input bg-background px-3.5 text-[0.95rem] outline-none transition-colors placeholder:text-muted-foreground/70 focus:border-primary'
@@ -110,9 +110,9 @@ export default function Login() {
           </form>
 
           <p className="mt-5 text-sm text-muted-foreground">
-            {isDemo
-              ? 'Demo mode: sign in with any email and password.'
-              : 'Accounts are created by the administrator. Ask them if you need one.'}
+            {isConfigured
+              ? 'Accounts are created by the administrator. Ask them if you need one.'
+              : 'Sign-in isn’t available: the site is missing its Supabase settings (NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY).'}
           </p>
         </motion.main>
       </div>

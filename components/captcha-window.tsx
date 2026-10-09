@@ -3,7 +3,6 @@
 import { AnimatePresence, motion, useDragControls } from 'framer-motion'
 import { GripHorizontal, Minus, ShieldCheck } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
-import { demoSolveCaptcha } from '@/lib/demo'
 import type { Job } from '@/lib/types'
 
 // El worker deja la casilla centrada en un navegador remoto de este tamaño exacto.
@@ -49,7 +48,6 @@ export function CaptchaWindow({
   const scale = useScale()
   const controls = useDragControls()
   const bounds = useRef<HTMLDivElement>(null)
-  const isDemoView = job?.live_view_url === 'demo'
 
   return (
     <div ref={bounds} className="pointer-events-none fixed inset-0 z-50 flex items-end justify-end p-3 sm:p-5">
@@ -94,35 +92,19 @@ export function CaptchaWindow({
             </div>
 
             <div style={{ height: VIEW_H * scale }} className="relative overflow-hidden bg-white">
-              {isDemoView ? (
-                <div className="flex h-full flex-col items-center justify-center gap-5 px-8 text-center text-[#141a33]">
-                  <p className="max-w-[30ch] text-sm text-[#565d78]">
-                    The portal’s “I&apos;m not a robot” box appears here, live from the remote browser.
-                  </p>
-                  <button
-                    type="button"
-                    onClick={() => job && demoSolveCaptcha(job.id)}
-                    className="flex items-center gap-3 rounded-[3px] border border-[#d3d3d3] bg-[#f9f9f9] py-4 pr-10 pl-4 text-sm shadow-sm hover:bg-white"
-                  >
-                    <span className="size-6 rounded-[2px] border-2 border-[#c1c1c1] bg-white" />
-                    Simulate the verification
-                  </button>
-                </div>
-              ) : (
-                <iframe
-                  title="Portal verification box"
-                  src={job?.live_view_url ?? undefined}
-                  sandbox="allow-same-origin allow-scripts"
-                  allow="clipboard-read; clipboard-write"
-                  style={{
-                    width: VIEW_W,
-                    height: VIEW_H,
-                    transform: `scale(${scale})`,
-                    transformOrigin: 'top left',
-                  }}
-                  className="block border-0"
-                />
-              )}
+              <iframe
+                title="Portal verification box"
+                src={job?.live_view_url ?? undefined}
+                sandbox="allow-same-origin allow-scripts"
+                allow="clipboard-read; clipboard-write"
+                style={{
+                  width: VIEW_W,
+                  height: VIEW_H,
+                  transform: `scale(${scale})`,
+                  transformOrigin: 'top left',
+                }}
+                className="block border-0"
+              />
             </div>
 
             <p className="flex h-12 items-center border-t px-3.5 text-sm text-muted-foreground">

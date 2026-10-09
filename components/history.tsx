@@ -10,7 +10,7 @@ function Dot({ job }: { job: Job }) {
       ? 'bg-seal'
       : !isFinal(job.status)
         ? 'bg-primary motion-safe:animate-pulse'
-        : job.status === 'error' || job.status === 'captcha_timeout'
+        : job.status === 'error' || job.status === 'captcha_timeout' || job.status === 'unreadable'
           ? 'bg-destructive'
           : 'bg-input'
   return <span aria-hidden="true" className={cn('mt-[0.45rem] size-2 shrink-0 rounded-full', tone)} />

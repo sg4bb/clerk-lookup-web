@@ -5,7 +5,6 @@ import { Check, Copy, FileText, RotateCcw } from 'lucide-react'
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { pdfUrl } from '@/lib/jobs'
-import { isDemo } from '@/lib/supabase'
 import type { Job, JobStatus } from '@/lib/types'
 
 const OUTCOME: Partial<Record<JobStatus, { title: string; help: string; retry?: boolean }>> = {
@@ -24,6 +23,19 @@ const OUTCOME: Partial<Record<JobStatus, { title: string; help: string; retry?: 
   unsupported: {
     title: 'This story is outside current coverage',
     help: 'For now, searches cover Orange County, Florida.',
+  },
+  unreadable: {
+    title: 'The article couldn’t be read',
+    help: 'Check that the link opens the news story in your browser.',
+    retry: true,
+  },
+  no_suspect: {
+    title: 'The story doesn’t name the person arrested',
+    help: 'The court portal can only be searched by name, so a story without one can’t be matched to a case.',
+  },
+  unknown_location: {
+    title: 'Couldn’t tell where this happened',
+    help: 'The story doesn’t say which city or county the arrest was in.',
   },
   captcha_timeout: {
     title: 'The verification wasn’t completed in time',
@@ -136,7 +148,7 @@ function Folder({ job }: { job: Job }) {
           <button
             type="button"
             onClick={open}
-            disabled={opening || isDemo || !job.pdf_path}
+            disabled={opening || !job.pdf_path}
             className="inline-flex h-10 items-center gap-2 rounded-lg bg-manila-ink px-4 text-sm font-medium text-manila transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-55"
           >
             <FileText className="size-4" aria-hidden="true" />
@@ -144,7 +156,6 @@ function Folder({ job }: { job: Job }) {
           </button>
           {job.case_number && <CopyButton text={job.case_number} />}
         </div>
-        {isDemo && <p className="mt-3 text-sm text-manila-ink/70">Demo mode has no real PDF to open.</p>}
         {problem && (
           <p role="alert" className="mt-3 text-sm font-medium text-[#8f241d]">
             {problem}

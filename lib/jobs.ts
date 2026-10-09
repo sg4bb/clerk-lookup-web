@@ -1,8 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { demoCreate, demoHistory, demoJob, subscribeDemo } from './demo'
-import { isDemo, supabase } from './supabase'
+import { supabase } from './supabase'
 import { isFinal, type Job } from './types'
 
 const TABLE = 'lookup_jobs'
@@ -15,7 +14,6 @@ const HISTORY_COLUMNS = 'id,created_at,article_url,article_title,status,status_d
 
 /** Crea el pedido. El worker lo toma de la cola por su cuenta. */
 export async function createJob(articleUrl: string): Promise<Job> {
-  if (isDemo) return demoCreate(articleUrl)
   const { data, error } = await supabase()
     .from(TABLE)
     .insert({ article_url: articleUrl })
@@ -36,16 +34,6 @@ export function useJob(id: string | null): { job: Job | null; missing: boolean }
     setMissing(false)
     finalRef.current = false
     if (!id) return
-
-    if (isDemo) {
-      const sync = () => {
-        const current = demoJob(id)
-        setJob(current)
-        setMissing(!current)
-      }
-      sync()
-      return subscribeDemo(sync)
-    }
 
     const sb = supabase()
     let alive = true
@@ -93,19 +81,12 @@ export function useJob(id: string | null): { job: Job | null; missing: boolean }
 }
 
 /** Últimas búsquedas del usuario. Cambia `refreshKey` para volver a cargarlas. */
-export function useHistory(refreshKey: string): { jobs: Job[]; loading: boolean } {
+export function useHistory(refreshKey: string, enabled: boolean): { jobs: Job[]; loading: boolean } {
   const [jobs, setJobs] = useState<Job[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    if (isDemo) {
-      const sync = () => {
-        setJobs(demoHistory())
-        setLoading(false)
-      }
-      sync()
-      return subscribeDemo(sync)
-    }
+    if (!enabled) return
     let alive = true
     supabase()
       .from(TABLE)
@@ -120,14 +101,14 @@ export function useHistory(refreshKey: string): { jobs: Job[]; loading: boolean 
     return () => {
       alive = false
     }
-  }, [refreshKey])
+  }, [refreshKey, enabled])
 
   return { jobs, loading }
 }
 
-/** Enlace temporal (1 hora) al PDF del bucket privado. null en la demostración. */
+/** Enlace temporal (1 hora) al PDF del bucket privado. */
 export async function pdfUrl(job: Job): Promise<string | null> {
-  if (isDemo || !job.pdf_path) return null
+  if (!job.pdf_path) return null
   const { data, error } = await supabase().storage.from(BUCKET).createSignedUrl(job.pdf_path, 3600)
   if (error || !data) throw new Error(error?.message ?? 'Could not open the document')
   return data.signedUrl
