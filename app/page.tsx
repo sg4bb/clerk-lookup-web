@@ -108,8 +108,8 @@ export default function Home() {
               From the news story to the case file.
             </h1>
             <p className="mt-4 max-w-[58ch] text-[1.05rem] leading-relaxed text-muted-foreground">
-              Paste the link to a news story about an arrest. The case is looked up at the Orange County, Florida, Clerk
-              of Courts and you get the incident report as a PDF.
+              Paste the link to a news story about an arrest in Florida. The case is looked up at the Clerk of Courts of
+              the county where it happened, and you get the arrest affidavit or incident report as a PDF.
             </p>
             <div className="mt-8">
               <LinkForm busy={running} onSubmit={start} />

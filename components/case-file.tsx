@@ -22,7 +22,7 @@ const OUTCOME: Partial<Record<JobStatus, { title: string; help: string; retry?: 
   },
   unsupported: {
     title: 'This story is outside current coverage',
-    help: 'For now, searches cover Orange County, Florida.',
+    help: 'The court portal for that county isn’t connected yet.',
   },
   unreadable: {
     title: 'The article couldn’t be read',
