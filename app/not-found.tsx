@@ -14,7 +14,7 @@ export default function NotFound() {
       </div>
 
       <div className="grid flex-1 place-items-center px-5 py-10">
-        <main className="relative w-full max-w-[25rem]">
+        <main className="relative w-full max-w-100">
           <BrandMark className="size-10" />
           <p className="case-number mt-6 text-sm text-muted-foreground">404</p>
           <h1 className="mt-1 font-display text-[2.5rem] leading-[1.05] font-medium tracking-tight">Page not found.</h1>
