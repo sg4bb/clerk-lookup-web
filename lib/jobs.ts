@@ -9,7 +9,8 @@ const BUCKET = 'incident-reports'
 // Sin "result" ni "query": son grandes y la pantalla no los usa.
 const COLUMNS =
   'id,created_at,finished_at,article_url,status,status_detail,live_view_url,captcha_expires_at,' +
-  'article_title,extraction,case_number,document_name,confidence,related_cases,pdf_path'
+  'article_title,extraction,case_number,document_name,confidence,related_cases,pdf_path,' +
+  'support_document_name,support_pdf_path'
 const HISTORY_COLUMNS = 'id,created_at,article_url,article_title,status,status_detail,case_number,confidence'
 
 /** Crea el pedido. El worker lo toma de la cola por su cuenta. */
@@ -106,10 +107,10 @@ export function useHistory(refreshKey: string, enabled: boolean): { jobs: Job[];
   return { jobs, loading }
 }
 
-/** Enlace temporal (1 hora) al PDF del bucket privado. */
-export async function pdfUrl(job: Job): Promise<string | null> {
-  if (!job.pdf_path) return null
-  const { data, error } = await supabase().storage.from(BUCKET).createSignedUrl(job.pdf_path, 3600)
+/** Enlace temporal (1 hora) a un PDF del bucket privado (principal o de apoyo). */
+export async function pdfUrl(path: string | null): Promise<string | null> {
+  if (!path) return null
+  const { data, error } = await supabase().storage.from(BUCKET).createSignedUrl(path, 3600)
   if (error || !data) throw new Error(error?.message ?? 'Could not open the document')
   return data.signedUrl
 }

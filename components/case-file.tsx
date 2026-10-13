@@ -70,16 +70,16 @@ function CopyButton({ text }: { text: string }) {
 }
 
 function Folder({ job }: { job: Job }) {
-  const [opening, setOpening] = useState(false)
+  const [opening, setOpening] = useState<'main' | 'support' | null>(null)
   const [problem, setProblem] = useState<string | null>(null)
 
-  async function open() {
+  async function open(which: 'main' | 'support') {
     setProblem(null)
-    setOpening(true)
+    setOpening(which)
     // La pestaña se abre ya, dentro del clic, para que el navegador no la bloquee.
     const tab = window.open('', '_blank')
     try {
-      const url = await pdfUrl(job)
+      const url = await pdfUrl(which === 'main' ? job.pdf_path : (job.support_pdf_path ?? null))
       if (!url) throw new Error('sin enlace')
       if (tab) tab.location.href = url
       else window.location.href = url
@@ -87,11 +87,12 @@ function Folder({ job }: { job: Job }) {
       tab?.close()
       setProblem('Couldn’t open the document. Try again.')
     } finally {
-      setOpening(false)
+      setOpening(null)
     }
   }
 
   const related = job.related_cases ?? []
+  const support = job.support_pdf_path ? job.support_document_name || 'Warrant served' : null
 
   return (
     <motion.section
@@ -147,15 +148,35 @@ function Folder({ job }: { job: Job }) {
         <div className="mt-6 flex flex-wrap items-center gap-2.5">
           <button
             type="button"
-            onClick={open}
-            disabled={opening || !job.pdf_path}
+            onClick={() => open('main')}
+            disabled={opening !== null || !job.pdf_path}
             className="inline-flex h-10 items-center gap-2 rounded-lg bg-manila-ink px-4 text-sm font-medium text-manila transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-55"
           >
             <FileText className="size-4" aria-hidden="true" />
-            {opening ? 'Opening…' : 'Open PDF'}
+            {opening === 'main' ? 'Opening…' : 'Open PDF'}
           </button>
           {job.case_number && <CopyButton text={job.case_number} />}
         </div>
+
+        {support && (
+          // Segundo documento, como una hoja engrapada a la carpeta: la orden ejecutada.
+          <div className="mt-6 border-t border-dashed border-manila-ink/25 pt-5">
+            <p className="text-sm text-manila-ink/70">Also in the file: the arrest warrant</p>
+            <p className="mt-1 max-w-[52ch] text-[0.95rem] leading-snug font-medium">{support}</p>
+            <p className="mt-1 max-w-[56ch] text-sm text-manila-ink/70">
+              Usually lists the report number of the agency that investigated the incident.
+            </p>
+            <button
+              type="button"
+              onClick={() => open('support')}
+              disabled={opening !== null}
+              className="mt-3 inline-flex h-10 items-center gap-2 rounded-lg border border-manila-ink/25 px-4 text-sm font-medium text-manila-ink transition-colors hover:bg-manila-ink/[0.07] disabled:cursor-not-allowed disabled:opacity-55"
+            >
+              <FileText className="size-4" aria-hidden="true" />
+              {opening === 'support' ? 'Opening…' : 'Open warrant'}
+            </button>
+          </div>
+        )}
         {problem && (
           <p role="alert" className="mt-3 text-sm font-medium text-[#8f241d]">
             {problem}

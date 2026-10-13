@@ -56,6 +56,9 @@ export interface Job {
   confidence: number | null
   related_cases: string[] | null
   pdf_path: string | null
+  // Orden de captura ejecutada (warrant / capias served), si el arresto fue con orden.
+  support_document_name?: string | null
+  support_pdf_path?: string | null
 }
 
 export const FINAL_STATUSES: JobStatus[] = [
