@@ -40,6 +40,28 @@ export interface Extraction {
   summary?: string | null
 }
 
+// Una persona del artículo que el worker buscó en el portal (sql/004 del worker).
+export interface PersonSearched {
+  name: string
+  status: JobStatus
+  cases_checked: number
+}
+
+export interface CaseCheck {
+  ok: boolean
+  text: string
+}
+
+// El caso que más se acercó cuando ninguno alcanzó el mínimo (desde 30 %).
+export interface ClosestCase {
+  case_number: string
+  score: number
+  defendant: string | null
+  case_type: string | null
+  filed_date: string | null
+  checks: CaseCheck[]
+}
+
 export interface Job {
   id: string
   created_at: string
@@ -59,6 +81,8 @@ export interface Job {
   // Orden de captura ejecutada (warrant / capias served), si el arresto fue con orden.
   support_document_name?: string | null
   support_pdf_path?: string | null
+  people_searched?: PersonSearched[] | null
+  closest_case?: ClosestCase | null
 }
 
 export const FINAL_STATUSES: JobStatus[] = [

@@ -50,8 +50,11 @@ function Facts({ job }: { job: Job }) {
   if (!x) return null
   const person = x.people?.[0]
   const name = personName(x)
+  const searched = job.people_searched ?? []
   const rows: [string, string][] = []
-  if (name) rows.push(['Person', person?.age ? `${name}, ${person.age}` : name])
+  // Si el worker buscó a varios arrestados, se nombran todos (el resultado dice con cuál salió).
+  if (searched.length > 1) rows.push(['People', searched.map((p) => p.name).join(', ')])
+  else if (name) rows.push(['Person', person?.age ? `${name}, ${person.age}` : name])
   const date = plainDate(x.incident_date)
   if (date) rows.push(['Incident date', date])
   if (x.agency) rows.push(['Agency', x.agency])

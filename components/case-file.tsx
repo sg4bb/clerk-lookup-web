@@ -4,8 +4,9 @@ import { motion } from 'framer-motion'
 import { Check, Copy, FileText, RotateCcw } from 'lucide-react'
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
+import { plainDate } from '@/lib/format'
 import { pdfUrl } from '@/lib/jobs'
-import type { Job, JobStatus } from '@/lib/types'
+import type { ClosestCase, Job, JobStatus, PersonSearched } from '@/lib/types'
 
 const OUTCOME: Partial<Record<JobStatus, { title: string; help: string; retry?: boolean }>> = {
   no_document: {
@@ -46,7 +47,7 @@ const OUTCOME: Partial<Record<JobStatus, { title: string; help: string; retry?: 
   cancelled: { title: 'Search cancelled', help: 'It stopped before reaching a result.', retry: true },
 }
 
-function CopyButton({ text }: { text: string }) {
+function CopyButton({ text, plain = false }: { text: string; plain?: boolean }) {
   const [copied, setCopied] = useState(false)
   async function copy() {
     try {
@@ -57,6 +58,16 @@ function CopyButton({ text }: { text: string }) {
       /* sin permiso de portapapeles: el número sigue visible para copiarlo a mano */
     }
   }
+  const label = copied ? 'Case number copied' : 'Copy case number'
+  if (plain) {
+    // Fuera de la carpeta (tarjeta sin resultado): el botón normal de la web.
+    return (
+      <Button variant="outline" className="mt-4 h-9 gap-2 px-3.5" onClick={copy}>
+        {copied ? <Check className="size-3.5" aria-hidden="true" /> : <Copy className="size-3.5" aria-hidden="true" />}
+        {label}
+      </Button>
+    )
+  }
   return (
     <button
       type="button"
@@ -64,8 +75,66 @@ function CopyButton({ text }: { text: string }) {
       className="inline-flex h-10 items-center gap-2 rounded-lg border border-manila-ink/25 px-4 text-sm font-medium text-manila-ink transition-colors hover:bg-manila-ink/[0.07]"
     >
       {copied ? <Check className="size-4" aria-hidden="true" /> : <Copy className="size-4" aria-hidden="true" />}
-      {copied ? 'Case number copied' : 'Copy case number'}
+      {label}
     </button>
+  )
+}
+
+const ORDINAL = ['first', 'second', 'third', 'fourth']
+
+/** "Searched: Arthur Williams (5 cases checked), Timothy Colon (3 cases checked)". */
+function Searched({ people }: { people: PersonSearched[] }) {
+  return (
+    <p className="mt-2.5 max-w-[60ch] text-sm text-muted-foreground">
+      Searched:{' '}
+      {people.map((person, i) => (
+        <span key={`${person.name}-${i}`}>
+          {i > 0 && ', '}
+          <span className="font-medium text-foreground">{person.name}</span> ({person.cases_checked}{' '}
+          {person.cases_checked === 1 ? 'case' : 'cases'} checked)
+        </span>
+      ))}
+    </p>
+  )
+}
+
+/** El caso que más se acercó sin alcanzar el mínimo: para revisarlo a mano, no se descarga. */
+function Closest({ closest }: { closest: ClosestCase }) {
+  const opened = closest.filed_date ? `opened ${plainDate(closest.filed_date)}` : null
+  const about = [closest.defendant, closest.case_type, opened].filter(Boolean).join(', ')
+  const score = Math.min(100, Math.max(0, closest.score))
+  return (
+    <div className="mt-4 border-t border-dashed border-border pt-4">
+      <p className="text-sm text-muted-foreground">Closest case on the portal</p>
+      <p className="mt-1 flex flex-wrap items-baseline gap-x-3 gap-y-0.5">
+        <span className="case-number text-[1.05rem]">{closest.case_number}</span>
+        {about && <span className="text-sm text-muted-foreground">{about}</span>}
+      </p>
+      <div className="mt-2.5 max-w-sm">
+        <div className="flex items-baseline justify-between text-sm">
+          <span className="text-muted-foreground">Match with the story</span>
+          <span className="tabular font-semibold">{score}%</span>
+        </div>
+        {/* Gris, no el azul de "encontrado": no alcanzó el mínimo. */}
+        <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-muted">
+          <div className="h-full rounded-full bg-muted-foreground" style={{ width: `${score}%` }} />
+        </div>
+      </div>
+      {closest.checks.length > 0 && (
+        <ul className="mt-3 max-w-[60ch] list-disc space-y-1 pl-5 text-[0.95rem]">
+          {closest.checks.map((check, i) => (
+            <li key={i} className={check.ok ? 'marker:text-seal' : 'marker:text-destructive'}>
+              <span className="sr-only">{check.ok ? 'Matches: ' : 'Doesn’t match: '}</span>
+              {check.text}
+            </li>
+          ))}
+        </ul>
+      )}
+      <p className="mt-3 max-w-[60ch] text-sm text-muted-foreground">
+        Not enough to confirm it’s the same case. Check it on the portal before using it in a request.
+      </p>
+      <CopyButton text={closest.case_number} plain />
+    </div>
   )
 }
 
@@ -93,6 +162,8 @@ function Folder({ job }: { job: Job }) {
 
   const related = job.related_cases ?? []
   const support = job.support_pdf_path ? job.support_document_name || 'Warrant served' : null
+  const people = job.people_searched ?? []
+  const via = people.findIndex((person) => person.status === 'found')
 
   return (
     <motion.section
@@ -137,6 +208,13 @@ function Folder({ job }: { job: Job }) {
               />
             </div>
           </div>
+        )}
+
+        {via > 0 && (
+          <p className="mt-4 text-sm text-manila-ink/80">
+            Found through the {ORDINAL[via] ?? 'next'} person named in the story:{' '}
+            <span className="font-medium text-manila-ink">{people[via].name}</span>
+          </p>
         )}
 
         {related.length > 0 && (
@@ -194,6 +272,9 @@ export function CaseFile({ job, onRetry }: { job: Job; onRetry: (url: string) =>
   if (!outcome) return null
   // El worker escribe el motivo exacto en status_detail; si falta, se usa el texto general.
   const help = job.status_detail?.trim() || outcome.help
+  const people = job.people_searched ?? []
+  // A quiénes se buscó: siempre si no hubo caso; en los demás, solo si fueron varios.
+  const showSearched = people.length > 0 && (job.status === 'not_found' || people.length > 1)
   return (
     <motion.section
       initial={{ opacity: 0, y: 12 }}
@@ -203,11 +284,13 @@ export function CaseFile({ job, onRetry }: { job: Job; onRetry: (url: string) =>
     >
       <h2 className="font-display text-xl leading-snug font-medium">{outcome.title}</h2>
       <p className="mt-1.5 max-w-[60ch] text-[0.95rem] text-muted-foreground">{help}</p>
+      {showSearched && <Searched people={people} />}
       {job.status === 'no_document' && job.case_number && (
         <p className="mt-3 text-sm">
           Case <span className="case-number">{job.case_number}</span>
         </p>
       )}
+      {job.status === 'not_found' && job.closest_case && <Closest closest={job.closest_case} />}
       {outcome.retry && (
         <Button variant="outline" className="mt-4 h-9 gap-2 px-3.5" onClick={() => onRetry(job.article_url)}>
           <RotateCcw className="size-3.5" aria-hidden="true" />
