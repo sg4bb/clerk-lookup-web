@@ -58,6 +58,22 @@ export const OUTCOME_LABEL: Record<JobStatus, string> = {
   cancelled: 'Cancelled',
 }
 
+const TITLE_MAX = 140
+
+/**
+ * Título para mostrar. Algunas páginas (los videos de Facebook) usan el texto entero de la
+ * publicación como título: se quita el "37K views · 247 reactions |" del inicio y se corta
+ * en una palabra. El título completo queda en `job.article_title`.
+ */
+export function displayTitle(title: string | null | undefined): string | null {
+  const clean = title?.replace(/^\s*[\d.,]+[KM]?\s+views?\b[^|]*\|\s*/i, '').trim()
+  if (!clean) return null
+  if (clean.length <= TITLE_MAX) return clean
+  const cut = clean.slice(0, TITLE_MAX)
+  const space = cut.lastIndexOf(' ')
+  return `${(space > TITLE_MAX * 0.6 ? cut.slice(0, space) : cut).replace(/[\s,.;:|·-]+$/, '')}…`
+}
+
 export function jobTitle(job: Job): string {
-  return job.article_title || host(job.article_url)
+  return displayTitle(job.article_title) || host(job.article_url)
 }

@@ -3,7 +3,7 @@
 import { AnimatePresence, motion } from 'framer-motion'
 import { Check, Clock, ExternalLink, ShieldCheck, X } from 'lucide-react'
 import { useEffect, useState } from 'react'
-import { clock, host, personName, plainDate } from '@/lib/format'
+import { clock, displayTitle, host, personName, plainDate } from '@/lib/format'
 import { STAGES, failedStage, stageIndex, useStageTimes } from '@/lib/stages'
 import { isFinal, type Job, type JobStatus } from '@/lib/types'
 import { cn } from '@/lib/utils'
@@ -145,8 +145,12 @@ export function Docket({ job, onOpenCaptcha }: { job: Job; onOpenCaptcha: () => 
     <section aria-label="Search progress" className="rounded-xl border bg-card">
       <header className="flex items-start justify-between gap-4 border-b px-5 py-4">
         <div className="min-w-0">
-          <h2 className="font-display text-xl leading-snug font-medium text-balance">
-            {job.article_title || (done ? host(job.article_url) : 'Search in progress')}
+          {/* Corto y a lo sumo 3 líneas: un título enorme (Facebook) no descuadra la tarjeta. */}
+          <h2
+            title={job.article_title ?? undefined}
+            className="line-clamp-3 font-display text-xl leading-snug font-medium text-balance break-words"
+          >
+            {displayTitle(job.article_title) || (done ? host(job.article_url) : 'Search in progress')}
           </h2>
           <a
             href={job.article_url}
