@@ -83,6 +83,8 @@ export interface Job {
   support_pdf_path?: string | null
   people_searched?: PersonSearched[] | null
   closest_case?: ClosestCase | null
+  // Número de reporte de la agencia que el portal anota en el docket (sql/005).
+  agency_case_number?: string | null
 }
 
 export const FINAL_STATUSES: JobStatus[] = [

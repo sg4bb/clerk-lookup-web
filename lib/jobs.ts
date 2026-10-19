@@ -10,7 +10,7 @@ const BUCKET = 'incident-reports'
 const COLUMNS =
   'id,created_at,finished_at,article_url,status,status_detail,live_view_url,captcha_expires_at,' +
   'article_title,extraction,case_number,document_name,confidence,related_cases,pdf_path,' +
-  'support_document_name,support_pdf_path,people_searched,closest_case'
+  'support_document_name,support_pdf_path,people_searched,closest_case,agency_case_number'
 const HISTORY_COLUMNS = 'id,created_at,article_url,article_title,status,status_detail,case_number,confidence'
 
 /** Crea el pedido. El worker lo toma de la cola por su cuenta. */

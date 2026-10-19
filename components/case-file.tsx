@@ -47,7 +47,15 @@ const OUTCOME: Partial<Record<JobStatus, { title: string; help: string; retry?: 
   cancelled: { title: 'Search cancelled', help: 'It stopped before reaching a result.', retry: true },
 }
 
-function CopyButton({ text, plain = false }: { text: string; plain?: boolean }) {
+function CopyButton({
+  text,
+  plain = false,
+  what = 'case number',
+}: {
+  text: string
+  plain?: boolean
+  what?: string
+}) {
   const [copied, setCopied] = useState(false)
   async function copy() {
     try {
@@ -58,7 +66,7 @@ function CopyButton({ text, plain = false }: { text: string; plain?: boolean }) 
       /* sin permiso de portapapeles: el número sigue visible para copiarlo a mano */
     }
   }
-  const label = copied ? 'Case number copied' : 'Copy case number'
+  const label = copied ? `${what[0].toUpperCase()}${what.slice(1)} copied` : `Copy ${what}`
   if (plain) {
     // Fuera de la carpeta (tarjeta sin resultado): el botón normal de la web.
     return (
@@ -223,6 +231,12 @@ function Folder({ job }: { job: Job }) {
           </p>
         )}
 
+        {job.agency_case_number && (
+          <p className="mt-4 text-sm text-manila-ink/80">
+            Agency report number: <span className="case-number">{job.agency_case_number}</span>
+          </p>
+        )}
+
         <div className="mt-6 flex flex-wrap items-center gap-2.5">
           <button
             type="button"
@@ -234,6 +248,7 @@ function Folder({ job }: { job: Job }) {
             {opening === 'main' ? 'Opening…' : 'Open PDF'}
           </button>
           {job.case_number && <CopyButton text={job.case_number} />}
+          {job.agency_case_number && <CopyButton text={job.agency_case_number} what="report number" />}
         </div>
 
         {support && (
@@ -289,6 +304,15 @@ export function CaseFile({ job, onRetry }: { job: Job; onRetry: (url: string) =>
         <p className="mt-3 text-sm">
           Case <span className="case-number">{job.case_number}</span>
         </p>
+      )}
+      {job.status === 'no_document' && job.agency_case_number && (
+        // Sin PDF, el número de reporte del docket alcanza para pedir el footage.
+        <>
+          <p className="mt-1 text-sm">
+            Agency report number <span className="case-number">{job.agency_case_number}</span>
+          </p>
+          <CopyButton text={job.agency_case_number} what="report number" plain />
+        </>
       )}
       {job.status === 'not_found' && job.closest_case && <Closest closest={job.closest_case} />}
       {outcome.retry && (
