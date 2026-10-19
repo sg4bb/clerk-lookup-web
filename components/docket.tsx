@@ -57,6 +57,9 @@ function Facts({ job }: { job: Job }) {
   else if (name) rows.push(['Person', person?.age ? `${name}, ${person.age}` : name])
   const date = plainDate(x.incident_date)
   if (date) rows.push(['Incident date', date])
+  // Cuando la nota solo dice cuándo lo arrestaron (p. ej. "wanted man"), esa es la fecha con la que se buscó.
+  const arrest = plainDate(x.arrest_date)
+  if (arrest && arrest !== date) rows.push(['Arrest date', arrest])
   if (x.agency) rows.push(['Agency', x.agency])
   if (x.county) rows.push(['County', `${x.county} County${x.state ? `, ${x.state}` : ''}`])
   if (x.charges?.length) rows.push(['Charges', x.charges.join('; ')])
