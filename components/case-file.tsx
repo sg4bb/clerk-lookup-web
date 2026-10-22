@@ -280,13 +280,46 @@ function Folder({ job }: { job: Job }) {
   )
 }
 
+/**
+ * El worker termina el aviso de fuera de cobertura con "(covered: Baker County, …)".
+ * Se separa para mostrar la lista como etiquetas: crece con cada condado nuevo.
+ */
+function splitCoverage(help: string): { text: string; counties: string[] } {
+  const match = help.match(/^([\s\S]*?)\s*\(covered:\s*([\s\S]+?)\)\.?\s*$/i)
+  if (!match) return { text: help, counties: [] }
+  const counties = match[2]
+    .split(',')
+    .map((name) => name.trim().replace(/\s+county$/i, ''))
+    .filter(Boolean)
+  const text = match[1].trim()
+  return { text: /[.!?]$/.test(text) ? text : `${text}.`, counties }
+}
+
+function Coverage({ counties }: { counties: string[] }) {
+  return (
+    <div className="mt-4">
+      <p className="text-sm text-muted-foreground">
+        Counties covered <span className="font-medium text-foreground">({counties.length})</span>
+      </p>
+      <ul className="mt-2 flex flex-wrap gap-1.5">
+        {counties.map((name) => (
+          <li key={name} className="rounded-full border bg-muted px-2.5 py-0.5 text-[0.8rem]">
+            {name}
+          </li>
+        ))}
+      </ul>
+    </div>
+  )
+}
+
 export function CaseFile({ job, onRetry }: { job: Job; onRetry: (url: string) => void }) {
   if (job.status === 'found') return <Folder job={job} />
 
   const outcome = OUTCOME[job.status]
   if (!outcome) return null
   // El worker escribe el motivo exacto en status_detail; si falta, se usa el texto general.
-  const help = job.status_detail?.trim() || outcome.help
+  const detail = job.status_detail?.trim() || outcome.help
+  const { text: help, counties } = job.status === 'unsupported' ? splitCoverage(detail) : { text: detail, counties: [] }
   const people = job.people_searched ?? []
   // A quiénes se buscó: siempre si no hubo caso; en los demás, solo si fueron varios.
   const showSearched = people.length > 0 && (job.status === 'not_found' || people.length > 1)
@@ -299,6 +332,7 @@ export function CaseFile({ job, onRetry }: { job: Job; onRetry: (url: string) =>
     >
       <h2 className="font-display text-xl leading-snug font-medium">{outcome.title}</h2>
       <p className="mt-1.5 max-w-[60ch] text-[0.95rem] text-muted-foreground">{help}</p>
+      {counties.length > 0 && <Coverage counties={counties} />}
       {showSearched && <Searched people={people} />}
       {job.status === 'no_document' && job.case_number && (
         <p className="mt-3 text-sm">
