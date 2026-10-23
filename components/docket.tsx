@@ -61,7 +61,9 @@ function Facts({ job }: { job: Job }) {
   const arrest = plainDate(x.arrest_date)
   if (arrest && arrest !== date) rows.push(['Arrest date', arrest])
   if (x.agency) rows.push(['Agency', x.agency])
-  if (x.county) rows.push(['County', `${x.county} County${x.state ? `, ${x.state}` : ''}`])
+  // El modelo a veces escribe "Madison County": sin repetir "County".
+  const county = x.county?.trim().replace(/\s+county$/i, '')
+  if (county) rows.push(['County', `${county} County${x.state ? `, ${x.state}` : ''}`])
   if (x.charges?.length) rows.push(['Charges', x.charges.join('; ')])
   if (!rows.length) return null
   return (
