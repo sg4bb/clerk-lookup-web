@@ -113,7 +113,9 @@ function Closest({ closest }: { closest: ClosestCase }) {
   const score = Math.min(100, Math.max(0, closest.score))
   return (
     <div className="mt-4 border-t border-dashed border-border pt-4">
-      <p className="text-sm text-muted-foreground">Closest case on the portal</p>
+      <p className="text-sm text-muted-foreground">
+        {closest.wide ? 'Possible match found without date limits' : 'Closest case on the portal'}
+      </p>
       <p className="mt-1 flex flex-wrap items-baseline gap-x-3 gap-y-0.5">
         <span className="case-number text-[1.05rem]">{closest.case_number}</span>
         {about && <span className="text-sm text-muted-foreground">{about}</span>}
@@ -139,7 +141,9 @@ function Closest({ closest }: { closest: ClosestCase }) {
         </ul>
       )}
       <p className="mt-3 max-w-[60ch] text-sm text-muted-foreground">
-        Not enough to confirm it’s the same case. Check it on the portal before using it in a request.
+        {closest.wide
+          ? 'Same name and similar charges, but outside the story’s dates. Check when it was opened before using it in a request.'
+          : 'Not enough to confirm it’s the same case. Check it on the portal before using it in a request.'}
       </p>
       <CopyButton text={closest.case_number} plain />
     </div>

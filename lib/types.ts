@@ -60,6 +60,8 @@ export interface ClosestCase {
   case_type: string | null
   filed_date: string | null
   checks: CaseCheck[]
+  // Salió de la búsqueda sin fechas (último recurso): mismo nombre y cargos parecidos.
+  wide?: boolean
 }
 
 export interface Job {
