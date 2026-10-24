@@ -327,6 +327,9 @@ export function CaseFile({ job, onRetry }: { job: Job; onRetry: (url: string) =>
   const people = job.people_searched ?? []
   // A quiénes se buscó: siempre si no hubo caso; en los demás, solo si fueron varios.
   const showSearched = people.length > 0 && (job.status === 'not_found' || people.length > 1)
+  // Caso encontrado pero el portal no entrega ahora docket o documentos (caída de su lado):
+  // el worker lo dice con "Try again", y vale la pena reintentar más tarde.
+  const retry = outcome.retry || (job.status === 'no_document' && /try again/i.test(help))
   return (
     <motion.section
       initial={{ opacity: 0, y: 12 }}
@@ -353,7 +356,7 @@ export function CaseFile({ job, onRetry }: { job: Job; onRetry: (url: string) =>
         </>
       )}
       {job.status === 'not_found' && job.closest_case && <Closest closest={job.closest_case} />}
-      {outcome.retry && (
+      {retry && (
         <Button variant="outline" className="mt-4 h-9 gap-2 px-3.5" onClick={() => onRetry(job.article_url)}>
           <RotateCcw className="size-3.5" aria-hidden="true" />
           Search again
