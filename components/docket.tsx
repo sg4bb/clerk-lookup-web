@@ -60,6 +60,9 @@ function Facts({ job }: { job: Job }) {
   // Cuando la nota solo dice cuándo lo arrestaron (p. ej. "wanted man"), esa es la fecha con la que se buscó.
   const arrest = plainDate(x.arrest_date)
   if (arrest && arrest !== date) rows.push(['Arrest date', arrest])
+  // Notas de condena: muchas veces la única fecha, y con ella se buscó.
+  const court = (x.court_dates ?? []).map(plainDate).filter((d): d is string => !!d)
+  if (court.length) rows.push([court.length > 1 ? 'Court dates' : 'Court date', court.join(', ')])
   if (x.agency) rows.push(['Agency', x.agency])
   // El modelo a veces escribe "Madison County": sin repetir "County".
   const county = x.county?.trim().replace(/\s+county$/i, '')

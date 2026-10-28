@@ -32,6 +32,8 @@ export interface Extraction {
   people: Person[]
   incident_date: string | null
   arrest_date?: string | null
+  // Veredicto, declaración de culpa, condena o sentencia que cuenta la nota.
+  court_dates?: string[] | null
   city?: string | null
   county: string | null
   state?: string | null
