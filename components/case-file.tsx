@@ -256,12 +256,13 @@ function Folder({ job }: { job: Job }) {
         </div>
 
         {support && (
-          // Segundo documento, como una hoja engrapada a la carpeta: la orden ejecutada.
+          // Segundo documento, como una hoja engrapada a la carpeta. Según el condado es la orden
+          // ejecutada, la sworn complaint, el paquete de primera audiencia o el notice to appear.
           <div className="mt-6 border-t border-dashed border-manila-ink/25 pt-5">
-            <p className="text-sm text-manila-ink/70">Also in the file: the arrest warrant</p>
+            <p className="text-sm text-manila-ink/70">Also in the file: supporting document</p>
             <p className="mt-1 max-w-[52ch] text-[0.95rem] leading-snug font-medium">{support}</p>
             <p className="mt-1 max-w-[56ch] text-sm text-manila-ink/70">
-              Usually lists the report number of the agency that investigated the incident.
+              Another record from the same case. It may add details or the agency report number.
             </p>
             <button
               type="button"
@@ -270,7 +271,7 @@ function Folder({ job }: { job: Job }) {
               className="mt-3 inline-flex h-10 items-center gap-2 rounded-lg border border-manila-ink/25 px-4 text-sm font-medium text-manila-ink transition-colors hover:bg-manila-ink/[0.07] disabled:cursor-not-allowed disabled:opacity-55"
             >
               <FileText className="size-4" aria-hidden="true" />
-              {opening === 'support' ? 'Opening…' : 'Open warrant'}
+              {opening === 'support' ? 'Opening…' : 'Open document'}
             </button>
           </div>
         )}

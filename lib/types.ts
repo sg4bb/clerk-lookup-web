@@ -80,7 +80,7 @@ export interface Job {
   confidence: number | null
   related_cases: string[] | null
   pdf_path: string | null
-  // Orden de captura ejecutada (warrant / capias served), si el arresto fue con orden.
+  // Documento de apoyo del mismo caso: orden ejecutada, sworn complaint, paquete de primera audiencia…
   support_document_name?: string | null
   support_pdf_path?: string | null
   people_searched?: PersonSearched[] | null
