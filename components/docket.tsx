@@ -1,8 +1,8 @@
 'use client'
 
-import { AnimatePresence, motion } from 'framer-motion'
-import { Check, Clock, ExternalLink, ShieldCheck, X } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
+import { Check, ChevronDown, Clock, ExternalLink, ShieldCheck, X } from 'lucide-react'
+import { useEffect, useState, type ReactNode } from 'react'
 import { clock, displayTitle, host, personName, plainDate } from '@/lib/format'
 import { STAGES, failedStage, stageIndex, useStageTimes } from '@/lib/stages'
 import { isFinal, type Job, type JobStatus } from '@/lib/types'
@@ -45,13 +45,70 @@ function Marker({ state }: { state: RowState }) {
   return <span className="mx-auto block size-2 rounded-full border border-input" />
 }
 
+// Cargos visibles antes de "+N more". Una nota con 16 arrestados trajo más de 60 (Lafayette, 29/10/2026).
+const CHARGES_SHOWN = 4
+
+function Charges({ charges }: { charges: string[] }) {
+  const [open, setOpen] = useState(false)
+  // El modelo repite el mismo cargo (uno por persona o por conteo): se muestra una vez.
+  const seen = new Set<string>()
+  const unique = charges
+    .map((c) => c.trim())
+    .filter((c) => {
+      const key = c.toLowerCase().replace(/\s+/g, ' ')
+      if (!c || seen.has(key)) return false
+      seen.add(key)
+      return true
+    })
+  // "+1 more" no ahorra nada: con uno de sobra se muestran todos.
+  const extra = unique.length > CHARGES_SHOWN + 1 ? unique.length - CHARGES_SHOWN : 0
+  const first = extra ? unique.slice(0, CHARGES_SHOWN) : unique
+  const rest = extra ? unique.slice(CHARGES_SHOWN) : []
+  const reduce = useReducedMotion()
+  return (
+    <>
+      {first.join('; ')}
+      {/* El botón queda junto a los primeros cargos y no salta al abrir ni al cerrar. */}
+      {extra > 0 && (
+        <button
+          type="button"
+          onClick={() => setOpen((v) => !v)}
+          aria-expanded={open}
+          className="ml-1.5 inline-flex items-center gap-0.5 rounded-sm font-medium whitespace-nowrap text-primary underline-offset-2 hover:underline focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+        >
+          {open ? 'Show fewer' : `+${extra} more`}
+          <ChevronDown
+            className={cn('size-3.5 transition-transform duration-200 motion-reduce:transition-none', open && 'rotate-180')}
+            aria-hidden="true"
+          />
+        </button>
+      )}
+      {/* El resto se despliega debajo, con la altura animada (sin animación si el sistema pide menos movimiento). */}
+      <AnimatePresence initial={false}>
+        {open && (
+          <motion.span
+            key="rest"
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: reduce ? 0 : 0.28, ease: [0.2, 0.8, 0.2, 1] }}
+            className="block overflow-hidden"
+          >
+            <span className="block pt-1">{rest.join('; ')}</span>
+          </motion.span>
+        )}
+      </AnimatePresence>
+    </>
+  )
+}
+
 function Facts({ job }: { job: Job }) {
   const x = job.extraction
   if (!x) return null
   const person = x.people?.[0]
   const name = personName(x)
   const searched = job.people_searched ?? []
-  const rows: [string, string][] = []
+  const rows: [string, ReactNode][] = []
   // Si el worker buscó a varios arrestados, se nombran todos (el resultado dice con cuál salió).
   if (searched.length > 1) rows.push(['People', searched.map((p) => p.name).join(', ')])
   else if (name) rows.push(['Person', person?.age ? `${name}, ${person.age}` : name])
@@ -67,7 +124,7 @@ function Facts({ job }: { job: Job }) {
   // El modelo a veces escribe "Madison County": sin repetir "County".
   const county = x.county?.trim().replace(/\s+county$/i, '')
   if (county) rows.push(['County', `${county} County${x.state ? `, ${x.state}` : ''}`])
-  if (x.charges?.length) rows.push(['Charges', x.charges.join('; ')])
+  if (x.charges?.length) rows.push(['Charges', <Charges charges={x.charges} />])
   if (!rows.length) return null
   return (
     <motion.dl
