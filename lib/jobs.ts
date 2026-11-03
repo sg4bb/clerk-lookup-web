@@ -81,26 +81,51 @@ export function useJob(id: string | null): { job: Job | null; missing: boolean }
   return { job, missing }
 }
 
-/** Últimas búsquedas del usuario. Cambia `refreshKey` para volver a cargarlas. */
+/** Últimas búsquedas del usuario. Cambia `refreshKey` para volver a cargarlas.
+ *
+ * Los pedidos de la lista que no están abiertos también se actualizan: con Realtime y, mientras
+ * alguno siga en curso o en cola, con una consulta cada pocos segundos de respaldo (dos pedidos
+ * a la vez: el que no estaba abierto se quedaba en "In progress" hasta abrirlo). */
 export function useHistory(refreshKey: string, enabled: boolean): { jobs: Job[]; loading: boolean } {
   const [jobs, setJobs] = useState<Job[]>([])
   const [loading, setLoading] = useState(true)
+  const pendingRef = useRef(false)
 
   useEffect(() => {
     if (!enabled) return
+    const sb = supabase()
     let alive = true
-    supabase()
-      .from(TABLE)
-      .select(HISTORY_COLUMNS)
-      .order('created_at', { ascending: false })
-      .limit(12)
-      .then(({ data }) => {
-        if (!alive) return
-        if (data) setJobs(data as unknown as Job[])
-        setLoading(false)
+    const load = async () => {
+      const { data } = await sb
+        .from(TABLE)
+        .select(HISTORY_COLUMNS)
+        .order('created_at', { ascending: false })
+        .limit(12)
+      if (!alive) return
+      if (data) {
+        const list = data as unknown as Job[]
+        pendingRef.current = list.some((j) => !isFinal(j.status))
+        setJobs(list)
+      }
+      setLoading(false)
+    }
+    void load()
+
+    const channel = sb
+      .channel('lookup-jobs-history')
+      .on('postgres_changes', { event: '*', schema: 'public', table: TABLE }, () => {
+        if (alive) void load()
       })
+      .subscribe()
+
+    const timer = window.setInterval(() => {
+      if (pendingRef.current) void load()
+    }, 5000)
+
     return () => {
       alive = false
+      window.clearInterval(timer)
+      void sb.removeChannel(channel)
     }
   }, [refreshKey, enabled])
 
