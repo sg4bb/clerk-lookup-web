@@ -47,6 +47,8 @@ export interface PersonSearched {
   name: string
   status: JobStatus
   cases_checked: number
+  // Condado donde se buscó (la nota puede nombrar varios; el worker prueba uno tras otro).
+  county?: string
 }
 
 export interface CaseCheck {

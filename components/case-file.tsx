@@ -4,7 +4,7 @@ import { motion } from 'framer-motion'
 import { Check, Copy, FileText, RotateCcw } from 'lucide-react'
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
-import { plainDate } from '@/lib/format'
+import { plainDate, uniqueNames } from '@/lib/format'
 import { pdfUrl } from '@/lib/jobs'
 import type { ClosestCase, Job, JobStatus, PersonSearched } from '@/lib/types'
 
@@ -90,15 +90,25 @@ function CopyButton({
 
 const ORDINAL = ['first', 'second', 'third', 'fourth']
 
-/** "Searched: Arthur Williams (5 cases checked), Timothy Colon (3 cases checked)". */
+/** Los condados donde se buscó, en orden y sin repetir. */
+function countiesSearched(people: PersonSearched[]): string[] {
+  return [...new Set(people.map((person) => person.county).filter((c): c is string => !!c))]
+}
+
+/**
+ * "Searched: Arthur Williams (5 cases checked), Timothy Colon (3 cases checked)".
+ * Si se buscó en más de un condado: "Austin Moore in Flagler County (0 cases checked), ...".
+ */
 function Searched({ people }: { people: PersonSearched[] }) {
+  const several = countiesSearched(people).length > 1
   return (
     <p className="mt-2.5 max-w-[60ch] text-sm text-muted-foreground">
       Searched:{' '}
       {people.map((person, i) => (
-        <span key={`${person.name}-${i}`}>
+        <span key={`${person.name}-${person.county ?? ''}-${i}`}>
           {i > 0 && ', '}
-          <span className="font-medium text-foreground">{person.name}</span> ({person.cases_checked}{' '}
+          <span className="font-medium text-foreground">{person.name}</span>
+          {several && person.county && ` in ${person.county}`} ({person.cases_checked}{' '}
           {person.cases_checked === 1 ? 'case' : 'cases'} checked)
         </span>
       ))}
@@ -175,7 +185,12 @@ function Folder({ job }: { job: Job }) {
   const related = job.related_cases ?? []
   const support = job.support_pdf_path ? job.support_document_name || 'Warrant served' : null
   const people = job.people_searched ?? []
-  const via = people.findIndex((person) => person.status === 'found')
+  const found = people.find((person) => person.status === 'found')
+  // Posición de la persona en la nota (no en la lista: con varios condados, cada uno repite a todos).
+  const via = found ? uniqueNames(people).indexOf(found.name) : -1
+  // La nota nombraba más de un condado y el caso salió en otro distinto del primero.
+  const counties = countiesSearched(people)
+  const otherCounty = found?.county && counties.length > 1 && counties[0] !== found.county ? found.county : null
 
   return (
     <motion.section
@@ -222,10 +237,17 @@ function Folder({ job }: { job: Job }) {
           </div>
         )}
 
-        {via > 0 && (
+        {via > 0 && found && (
           <p className="mt-4 text-sm text-manila-ink/80">
             Found through the {ORDINAL[via] ?? 'next'} person named in the story:{' '}
-            <span className="font-medium text-manila-ink">{people[via].name}</span>
+            <span className="font-medium text-manila-ink">{found.name}</span>
+          </p>
+        )}
+
+        {otherCounty && (
+          <p className="mt-4 text-sm text-manila-ink/80">
+            Found in <span className="font-medium text-manila-ink">{otherCounty}</span>, another county the story
+            names. No match in {counties.slice(0, counties.indexOf(otherCounty)).join(' or ')}.
           </p>
         )}
 

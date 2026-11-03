@@ -3,7 +3,7 @@
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { Check, ChevronDown, Clock, ExternalLink, ShieldCheck, X } from 'lucide-react'
 import { useEffect, useState, type ReactNode } from 'react'
-import { clock, displayTitle, host, personName, plainDate } from '@/lib/format'
+import { clock, displayTitle, host, personName, plainDate, uniqueNames } from '@/lib/format'
 import { STAGES, failedStage, stageIndex, useStageTimes } from '@/lib/stages'
 import { isFinal, type Job, type JobStatus } from '@/lib/types'
 import { cn } from '@/lib/utils'
@@ -110,7 +110,8 @@ function Facts({ job }: { job: Job }) {
   const searched = job.people_searched ?? []
   const rows: [string, ReactNode][] = []
   // Si el worker buscó a varios arrestados, se nombran todos (el resultado dice con cuál salió).
-  if (searched.length > 1) rows.push(['People', searched.map((p) => p.name).join(', ')])
+  const names = uniqueNames(searched)
+  if (names.length > 1) rows.push(['People', names.join(', ')])
   else if (name) rows.push(['Person', person?.age ? `${name}, ${person.age}` : name])
   const date = plainDate(x.incident_date)
   if (date) rows.push(['Incident date', date])

@@ -77,3 +77,8 @@ export function displayTitle(title: string | null | undefined): string | null {
 export function jobTitle(job: Job): string {
   return displayTitle(job.article_title) || host(job.article_url)
 }
+
+/** Las personas buscadas, sin repetir (en una búsqueda por varios condados aparecen una vez por condado). */
+export function uniqueNames(people: { name: string }[]): string[] {
+  return [...new Set(people.map((person) => person.name))]
+}
