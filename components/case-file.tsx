@@ -339,6 +339,25 @@ function Coverage({ counties }: { counties: string[] }) {
   )
 }
 
+// Los mensajes del worker pueden traer la dirección del portal (documentos que se piden al Clerk,
+// St. Lucie): se muestra como enlace con el nombre del sitio.
+function WithLinks({ text }: { text: string }) {
+  const parts = text.split(/(https?:\/\/[^\s)]+)/g)
+  return (
+    <>
+      {parts.map((part, i) =>
+        /^https?:\/\//.test(part) ? (
+          <a key={i} href={part} target="_blank" rel="noreferrer" className="underline underline-offset-2">
+            {new URL(part).hostname}
+          </a>
+        ) : (
+          part
+        ),
+      )}
+    </>
+  )
+}
+
 export function CaseFile({ job, onRetry }: { job: Job; onRetry: (url: string) => void }) {
   if (job.status === 'found') return <Folder job={job} />
 
@@ -361,7 +380,9 @@ export function CaseFile({ job, onRetry }: { job: Job; onRetry: (url: string) =>
       className="rounded-xl border border-dashed border-input px-5 py-5"
     >
       <h2 className="font-display text-xl leading-snug font-medium">{outcome.title}</h2>
-      <p className="mt-1.5 max-w-[60ch] text-[0.95rem] text-muted-foreground">{help}</p>
+      <p className="mt-1.5 max-w-[60ch] text-[0.95rem] text-muted-foreground">
+        <WithLinks text={help} />
+      </p>
       {counties.length > 0 && <Coverage counties={counties} />}
       {showSearched && <Searched people={people} />}
       {job.status === 'no_document' && job.case_number && (
@@ -371,12 +392,16 @@ export function CaseFile({ job, onRetry }: { job: Job; onRetry: (url: string) =>
       )}
       {job.status === 'no_document' && job.agency_case_number && (
         // Sin PDF, el número de reporte del docket alcanza para pedir el footage.
-        <>
-          <p className="mt-1 text-sm">
-            Agency report number <span className="case-number">{job.agency_case_number}</span>
-          </p>
-          <CopyButton text={job.agency_case_number} what="report number" plain />
-        </>
+        <p className="mt-1 text-sm">
+          Agency report number <span className="case-number">{job.agency_case_number}</span>
+        </p>
+      )}
+      {job.status === 'no_document' && (job.case_number || job.agency_case_number) && (
+        // El número de caso sirve para buscarlo en el portal y pedir el documento al Clerk.
+        <div className="flex flex-wrap gap-2">
+          {job.case_number && <CopyButton text={job.case_number} plain />}
+          {job.agency_case_number && <CopyButton text={job.agency_case_number} what="report number" plain />}
+        </div>
       )}
       {job.status === 'not_found' && job.closest_case && <Closest closest={job.closest_case} />}
       {retry && (

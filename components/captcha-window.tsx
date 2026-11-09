@@ -122,7 +122,7 @@ export function CaptchaWindow({
             </div>
 
             <p className="flex h-12 items-center border-t px-3.5 text-sm text-muted-foreground">
-              Tick the box. If the view freezes, reload it with ↻ above.
+              Tick the box, or type the answer and press Enter. If the view freezes, reload it with ↻ above.
             </p>
           </motion.div>
         )}

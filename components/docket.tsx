@@ -320,7 +320,7 @@ export function Docket({ job, onOpenCaptcha }: { job: Job; onOpenCaptcha: () => 
                       <div className="mt-2.5 flex flex-wrap items-center gap-x-3 gap-y-2 rounded-md border border-primary/30 bg-primary/[0.06] px-3.5 py-3 text-sm">
                         <ShieldCheck className="size-4 shrink-0 text-primary" aria-hidden="true" />
                         <span className="min-w-0 flex-1">
-                          The portal needs to confirm a person is here. Tick the box in the verification window.
+                          The portal needs to confirm a person is here. Complete the check in the verification window.
                         </span>
                         <button
                           type="button"
