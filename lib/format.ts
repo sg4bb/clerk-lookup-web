@@ -16,6 +16,14 @@ export function plainDate(value: string | null | undefined): string | null {
   return `${MONTHS[Number(match[2]) - 1]} ${Number(match[3])}, ${match[1]}`
 }
 
+/** "2024-07-25T20:41" -> "Jul 25, 2024 at 8:41 PM" (sin pasar por zonas horarias). */
+export function plainDateTime(value: string | null | undefined): string | null {
+  const match = value?.match(/^(\d{4}-\d{2}-\d{2})T(\d{2}):(\d{2})/)
+  if (!match) return plainDate(value)
+  const hour = Number(match[2])
+  return `${plainDate(match[1])} at ${hour % 12 || 12}:${match[3]} ${hour < 12 ? 'AM' : 'PM'}`
+}
+
 export function clock(ms: number): string {
   return new Date(ms).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })
 }

@@ -3,6 +3,7 @@
 import { motion } from 'framer-motion'
 import { Check, Copy, FileText, RotateCcw } from 'lucide-react'
 import { useState } from 'react'
+import { JailRecord } from '@/components/jail-record'
 import { Button } from '@/components/ui/button'
 import { plainDate, uniqueNames } from '@/lib/format'
 import { pdfUrl } from '@/lib/jobs'
@@ -360,6 +361,9 @@ function WithLinks({ text }: { text: string }) {
 
 export function CaseFile({ job, onRetry }: { job: Job; onRetry: (url: string) => void }) {
   if (job.status === 'found') return <Folder job={job} />
+  // Escambia con el portal bloqueado: el arresto según la cárcel, en su propia ficha.
+  if (job.status === 'no_document' && job.jail_booking)
+    return <JailRecord booking={job.jail_booking} onRetry={() => onRetry(job.article_url)} />
 
   const outcome = OUTCOME[job.status]
   if (!outcome) return null

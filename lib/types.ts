@@ -68,6 +68,30 @@ export interface ClosestCase {
   wide?: boolean
 }
 
+/**
+ * Escambia con el portal de la corte bloqueado: el arresto según el registro de la cárcel del
+ * condado (sql/006). Fechas en ISO local, sin zona: "2024-07-25T20:41", "2024-04-28".
+ */
+export interface JailBooking {
+  source: string
+  source_url: string
+  name: string
+  booking_number: string
+  booked: string | null
+  released: string | null
+  court_case: string | null
+  report: string | null
+  agency: string | null
+  charges: string[]
+  // Elegido por los cargos y no por la fecha: la fecha de la nota y los días que lo separan.
+  story_date: string | null
+  days_from_story: number | null
+  portal_url: string
+  search_name: string
+  opened_from: string | null
+  opened_to: string | null
+}
+
 export interface Job {
   id: string
   created_at: string
@@ -91,6 +115,7 @@ export interface Job {
   closest_case?: ClosestCase | null
   // Número de reporte de la agencia que el portal anota en el docket (sql/005).
   agency_case_number?: string | null
+  jail_booking?: JailBooking | null
 }
 
 export const FINAL_STATUSES: JobStatus[] = [
