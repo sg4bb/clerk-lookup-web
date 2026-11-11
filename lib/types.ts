@@ -80,6 +80,8 @@ export interface JailBooking {
   booked: string | null
   released: string | null
   court_case: string | null
+  // Otros números de caso del mismo booking (cargos que no son los de la nota).
+  other_cases?: string[]
   report: string | null
   agency: string | null
   charges: string[]

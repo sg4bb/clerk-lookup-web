@@ -134,7 +134,16 @@ export function JailRecord({ booking, onRetry }: { booking: JailBooking; onRetry
           </div>
 
           <dl className="mt-5 grid gap-x-8 gap-y-4 sm:grid-cols-2">
-            <Field label="Court case" value={booking.court_case} copy="case number" />
+            <Field
+              label="Court case"
+              value={booking.court_case}
+              copy="case number"
+              hint={
+                booking.other_cases?.length
+                  ? `Same booking, other charges: ${booking.other_cases.join(', ')}.`
+                  : undefined
+              }
+            />
             <Field
               label="Agency report"
               value={booking.report}
