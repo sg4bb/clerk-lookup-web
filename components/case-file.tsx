@@ -1,13 +1,16 @@
 'use client'
 
 import { motion } from 'framer-motion'
-import { Check, Copy, FileText, RotateCcw } from 'lucide-react'
+import { Check, Copy, ExternalLink, FileText, RotateCcw } from 'lucide-react'
 import { useState } from 'react'
+import { CopyChip } from '@/components/copy-chip'
 import { JailRecord } from '@/components/jail-record'
-import { Button } from '@/components/ui/button'
+import { Button, buttonVariants } from '@/components/ui/button'
 import { plainDate, uniqueNames } from '@/lib/format'
 import { pdfUrl } from '@/lib/jobs'
+import { missingInfo } from '@/lib/missing'
 import type { ClosestCase, Job, JobStatus, PersonSearched } from '@/lib/types'
+import { cn } from '@/lib/utils'
 
 const OUTCOME: Partial<Record<JobStatus, { title: string; help: string; retry?: boolean }>> = {
   no_document: {
@@ -359,11 +362,118 @@ function WithLinks({ text }: { text: string }) {
   )
 }
 
+/**
+ * Caso encontrado sin PDF. La misma carpeta que "found", pero en papel común y con un sello que dice
+ * por qué no está el documento (on request, aún sin publicar, confidencial…). Debajo, el texto del
+ * worker para ese condado y solo los botones que sirven en ese caso.
+ */
+function CaseOnFile({ job, onRetry }: { job: Job; onRetry: () => void }) {
+  const missing = missingInfo(job)
+  const stamp = missing.copy
+  const filed = plainDate(missing.filed)
+  const help = job.status_detail?.trim() || OUTCOME.no_document!.help
+  const portal = stamp.portal ? missing.portal_url : null
+  const people = job.people_searched ?? []
+  const related = job.related_cases ?? []
+
+  return (
+    <motion.section
+      aria-label="Case located without a downloadable document"
+      initial={{ opacity: 0, y: 20, rotate: -0.8 }}
+      animate={{ opacity: 1, y: 0, rotate: 0 }}
+      transition={{ type: 'spring', stiffness: 190, damping: 22 }}
+    >
+      {/* Pestaña de la carpeta con el número de caso, como en la de "found". */}
+      <div className="relative z-10 -mb-px inline-flex max-w-full items-baseline gap-2 rounded-t-lg border border-b-0 border-input bg-card px-4 pt-2.5 pb-2">
+        <span className="text-sm text-muted-foreground">Case</span>
+        <span className="case-number truncate text-[1.05rem]">{job.case_number}</span>
+      </div>
+      <div className="relative rounded-xl rounded-tl-none border border-input bg-card p-5 shadow-[0_18px_36px_-28px_rgba(20,26,51,0.55)] sm:p-6">
+        {/* En el celular el sello va a la derecha de "Document"; desde sm, en la esquina como "Located". */}
+        <div className="flex items-start justify-between gap-3">
+          <p className="text-sm text-muted-foreground">Document</p>
+          <motion.div
+            aria-hidden="true"
+            initial={{ opacity: 0, scale: 1.9, rotate: -4 }}
+            animate={{ opacity: 0.85, scale: 1, rotate: -6 }}
+            transition={{ delay: 0.35, duration: 0.22, ease: [0.3, 0, 0.2, 1] }}
+            className="-mt-0.5 mr-1 shrink-0 rounded-[5px] border-2 border-current px-2 py-1 text-[0.68rem] leading-none font-bold tracking-[0.12em] whitespace-nowrap text-muted-foreground uppercase sm:absolute sm:top-6 sm:right-7 sm:mt-0 sm:mr-0 sm:border-[2.5px] sm:px-2.5 sm:text-sm sm:tracking-[0.14em]"
+          >
+            {stamp.stamp}
+          </motion.div>
+        </div>
+        <p className="sr-only">Status: {stamp.stamp}.</p>
+        <h2 className="mt-2.5 font-display text-[1.6rem] leading-tight font-medium sm:mt-0.5 sm:pr-48">
+          {missing.document || stamp.title}
+        </h2>
+        {filed && <p className="mt-1 text-sm text-muted-foreground">Filed in the docket {filed}</p>}
+
+        <dl className="mt-5 grid gap-x-8 gap-y-4 sm:grid-cols-2">
+          <div>
+            <dt className="text-sm text-muted-foreground">Court case</dt>
+            <dd className="mt-1 flex flex-wrap items-center gap-2.5">
+              <span className="case-number text-[1.02rem]">{job.case_number}</span>
+              <CopyChip text={job.case_number!} what="case number" />
+            </dd>
+          </div>
+          {job.agency_case_number && (
+            <div>
+              <dt className="text-sm text-muted-foreground">Agency report</dt>
+              <dd className="mt-1 flex flex-wrap items-center gap-2.5">
+                <span className="case-number text-[1.02rem]">{job.agency_case_number}</span>
+                <CopyChip text={job.agency_case_number} what="report number" />
+              </dd>
+            </div>
+          )}
+        </dl>
+
+        {related.length > 0 && (
+          <p className="mt-4 text-sm text-muted-foreground">
+            Same arrest, separate case: <span className="case-number text-foreground">{related.join(', ')}</span>
+          </p>
+        )}
+        {people.length > 1 && <Searched people={people} />}
+
+        <div className="mt-5 border-t border-dashed border-border pt-4">
+          <h3 className="text-[0.95rem] font-medium">Why there’s no PDF</h3>
+          <p className="mt-1 max-w-[62ch] text-sm text-muted-foreground">
+            <WithLinks text={help} />
+          </p>
+          {(portal || stamp.retry) && (
+            <div className="mt-4 flex flex-wrap gap-2">
+              {portal && (
+                <a
+                  href={portal}
+                  target="_blank"
+                  rel="noreferrer"
+                  className={cn(buttonVariants({ variant: 'outline' }), 'h-9 gap-2 px-3.5')}
+                >
+                  Open the court portal
+                  <ExternalLink className="size-3.5" aria-hidden="true" />
+                </a>
+              )}
+              {stamp.retry && (
+                <Button variant="outline" className="h-9 gap-2 px-3.5" onClick={onRetry}>
+                  <RotateCcw className="size-3.5" aria-hidden="true" />
+                  Search again
+                </Button>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+    </motion.section>
+  )
+}
+
 export function CaseFile({ job, onRetry }: { job: Job; onRetry: (url: string) => void }) {
   if (job.status === 'found') return <Folder job={job} />
   // Escambia con el portal bloqueado: el arresto según la cárcel, en su propia ficha.
   if (job.status === 'no_document' && job.jail_booking)
     return <JailRecord booking={job.jail_booking} onRetry={() => onRetry(job.article_url)} />
+  // Caso encontrado sin PDF: la carpeta con el sello del motivo.
+  if (job.status === 'no_document' && job.case_number)
+    return <CaseOnFile job={job} onRetry={() => onRetry(job.article_url)} />
 
   const outcome = OUTCOME[job.status]
   if (!outcome) return null

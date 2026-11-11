@@ -1,9 +1,10 @@
 'use client'
 
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
-import { Check, ChevronDown, Clock, ExternalLink, ShieldCheck, X } from 'lucide-react'
+import { Check, ChevronDown, Clock, ExternalLink, Minus, ShieldCheck, X } from 'lucide-react'
 import { useEffect, useState, type ReactNode } from 'react'
 import { clock, displayTitle, host, personName, plainDate, uniqueNames } from '@/lib/format'
+import { missingStep } from '@/lib/missing'
 import { STAGES, failedStage, stageIndex, useStageTimes } from '@/lib/stages'
 import { isFinal, type Job, type JobStatus } from '@/lib/types'
 import { cn } from '@/lib/utils'
@@ -15,7 +16,8 @@ const LABELS = [
   { todo: 'Download the document', doing: 'Downloading the document', done: 'Document downloaded' },
 ]
 
-type RowState = 'todo' | 'doing' | 'done' | 'failed'
+// missing: el caso está pero el documento no (sin PDF por un motivo conocido): no es un error.
+type RowState = 'todo' | 'doing' | 'done' | 'failed' | 'missing'
 
 function Marker({ state }: { state: RowState }) {
   if (state === 'done')
@@ -28,6 +30,12 @@ function Marker({ state }: { state: RowState }) {
       >
         <Check className="size-3" strokeWidth={3} aria-hidden="true" />
       </motion.span>
+    )
+  if (state === 'missing')
+    return (
+      <span className="grid size-5 place-items-center rounded-full border-[1.5px] border-muted-foreground text-muted-foreground">
+        <Minus className="size-3" strokeWidth={3} aria-hidden="true" />
+      </span>
     )
   if (state === 'failed')
     return (
@@ -198,7 +206,8 @@ export function Docket({ job, onOpenCaptcha }: { job: Job; onOpenCaptcha: () => 
     if (done) {
       if (failedAt === -1) return 'done'
       if (i < failedAt) return 'done'
-      return i === failedAt ? 'failed' : 'todo'
+      if (i === failedAt) return job.status === 'no_document' ? 'missing' : 'failed'
+      return 'todo'
     }
     if (i < current) return 'done'
     return i === current ? 'doing' : 'todo'
@@ -277,12 +286,15 @@ export function Docket({ job, onOpenCaptcha }: { job: Job; onOpenCaptcha: () => 
                     state === 'todo' && 'text-muted-foreground',
                     state === 'done' && 'font-medium',
                     state === 'failed' && 'font-medium text-destructive',
+                    state === 'missing' && 'font-medium',
                   )}
                 >
                   {state === 'doing' ? (
                     <span className="shimmer font-medium">{waitingForPerson ? 'Needs your verification' : `${label.doing}…`}</span>
                   ) : state === 'done' ? (
                     label.done
+                  ) : state === 'missing' ? (
+                    missingStep(job)
                   ) : (
                     label.todo
                   )}

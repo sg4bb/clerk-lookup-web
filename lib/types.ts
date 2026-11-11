@@ -94,6 +94,24 @@ export interface JailBooking {
   opened_to: string | null
 }
 
+/** Por qué un caso encontrado no trae PDF (sql/007 del worker). */
+export type MissingReason =
+  | 'on_request'
+  | 'unpublished'
+  | 'confidential'
+  | 'not_in_docket'
+  | 'docket_unavailable'
+  | 'withheld'
+
+export interface MissingDocument {
+  reason: MissingReason
+  // Como lo nombra el docket ("CHARGING AFFIDAVIT"); null si no hay ninguno.
+  document: string | null
+  // Fecha en que entró al docket, ISO.
+  filed: string | null
+  portal_url: string
+}
+
 export interface Job {
   id: string
   created_at: string
@@ -118,6 +136,7 @@ export interface Job {
   // Número de reporte de la agencia que el portal anota en el docket (sql/005).
   agency_case_number?: string | null
   jail_booking?: JailBooking | null
+  missing_document?: MissingDocument | null
 }
 
 export const FINAL_STATUSES: JobStatus[] = [
