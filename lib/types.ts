@@ -102,6 +102,8 @@ export type MissingReason =
   | 'not_in_docket'
   | 'docket_unavailable'
   | 'withheld'
+  // El caso salió de otra fuente y el documento se abre a mano en el portal (Hillsborough, HOVER).
+  | 'manual'
 
 export interface MissingDocument {
   reason: MissingReason

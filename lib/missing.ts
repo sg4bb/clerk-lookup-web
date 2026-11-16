@@ -56,6 +56,14 @@ export const MISSING: Record<MissingReason, ReasonCopy> = {
     portal: false,
     retry: true,
   },
+  // Hillsborough: HOVER no deja automatizar; el caso sale del índice del Clerk y el PDF se abre a mano.
+  manual: {
+    stamp: 'Open by hand',
+    step: 'Open the case on the portal',
+    title: 'Arrest document',
+    portal: true,
+    retry: false,
+  },
 }
 
 /** Pedidos de antes de sql/007: sin motivo guardado, se lee del texto del worker. */
@@ -65,6 +73,7 @@ const FROM_TEXT: [RegExp, MissingReason][] = [
   [/marked confidential/i, 'confidential'],
   [/Dockets are currently unavailable/i, 'docket_unavailable'],
   [/not available at this time/i, 'withheld'],
+  [/doesn't allow automated searches/i, 'manual'],
   [/docket has no incident report or arrest affidavit/i, 'not_in_docket'],
 ]
 
